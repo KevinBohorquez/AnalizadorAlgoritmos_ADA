@@ -1,0 +1,8 @@
+pip install
+
+customtkinter
+matplotlib
+numpy
+reportlab
+ply
+typing-extensions
