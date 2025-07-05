@@ -1,4 +1,4 @@
-# gui.py - Interfaz Gráfica para el Analizador de Complejidad Temporal
+# gui.py - Interfaz Gráfica para el Analizador de Complejidad Temporal (MODIFICADA)
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -67,12 +67,12 @@ class ComplexityAnalyzerGUI:
         input_label = ctk.CTkLabel(left_panel, text="📝 Código a Analizar:", font=ctk.CTkFont(size=18, weight="bold"))
         input_label.pack(pady=(20, 15), padx=20, anchor="w")
 
-        # Frame para botones de entrada
-        input_buttons_frame = ctk.CTkFrame(left_panel)
-        input_buttons_frame.pack(fill="x", padx=20, pady=(0, 15))
+        # Frame para botones de entrada (PRIMERA FILA)
+        input_buttons_frame1 = ctk.CTkFrame(left_panel)
+        input_buttons_frame1.pack(fill="x", padx=20, pady=(0, 8))
 
         self.load_file_btn = ctk.CTkButton(
-            input_buttons_frame,
+            input_buttons_frame1,
             text="📁 Cargar Archivo",
             command=self.load_file,
             width=140,
@@ -82,7 +82,7 @@ class ComplexityAnalyzerGUI:
         self.load_file_btn.pack(side="left", padx=(15, 8), pady=12)
 
         self.clear_btn = ctk.CTkButton(
-            input_buttons_frame,
+            input_buttons_frame1,
             text="🗑️ Limpiar",
             command=self.clear_text,
             width=120,
@@ -94,7 +94,7 @@ class ComplexityAnalyzerGUI:
         self.clear_btn.pack(side="left", padx=8, pady=12)
 
         self.analyze_btn = ctk.CTkButton(
-            input_buttons_frame,
+            input_buttons_frame1,
             text="🔍 Analizar",
             command=self.analyze_code,
             width=140,
@@ -105,9 +105,12 @@ class ComplexityAnalyzerGUI:
         )
         self.analyze_btn.pack(side="left", padx=8, pady=12)
 
-        # Botones de exportación junto al botón analizar
+        # Frame para botones de entrada (SEGUNDA FILA)
+        input_buttons_frame2 = ctk.CTkFrame(left_panel)
+        input_buttons_frame2.pack(fill="x", padx=20, pady=(0, 15))
+
         self.export_report_btn = ctk.CTkButton(
-            input_buttons_frame,
+            input_buttons_frame2,
             text="📋 PDF",
             command=self.export_report,
             width=100,
@@ -117,10 +120,10 @@ class ComplexityAnalyzerGUI:
             fg_color="blue",
             hover_color="darkblue"
         )
-        self.export_report_btn.pack(side="left", padx=5, pady=12)
+        self.export_report_btn.pack(side="left", padx=(15, 5), pady=12)
 
         self.export_graph_btn = ctk.CTkButton(
-            input_buttons_frame,
+            input_buttons_frame2,
             text="📊 Ver Gráfica",
             command=self.show_graph,
             width=120,
@@ -131,6 +134,19 @@ class ComplexityAnalyzerGUI:
             hover_color="darkmagenta"
         )
         self.export_graph_btn.pack(side="left", padx=5, pady=12)
+
+        # NUEVO BOTÓN: Comparar Algoritmos
+        self.compare_algorithms_btn = ctk.CTkButton(
+            input_buttons_frame2,
+            text="⚖️ Comparar",
+            command=self.open_comparison_window,
+            width=130,
+            height=35,
+            font=ctk.CTkFont(size=11, weight="bold"),
+            fg_color="darkorange",
+            hover_color="chocolate"
+        )
+        self.compare_algorithms_btn.pack(side="left", padx=5, pady=12)
 
         # Área de texto para código
         self.code_text = ctk.CTkTextbox(
@@ -278,14 +294,520 @@ class ComplexityAnalyzerGUI:
             self.function_label.configure(text="Función T: ❌ Error en análisis", text_color="red")
             messagebox.showerror("❌ Error", f"Error al analizar el código:\n\n{str(e)}")
 
+    def open_comparison_window(self):
+        """Abre la ventana de comparación de algoritmos"""
+        comparison_window = ctk.CTkToplevel(self.root)
+        comparison_window.title("⚖️ Comparador de Algoritmos")
+        comparison_window.geometry("1400x800")
+        comparison_window.resizable(True, True)  # Permitir maximizar
+        comparison_window.grab_set()  # Hacer modal
+
+        # Variables para almacenar los algoritmos
+        algorithms_data = {}
+        algorithm_frames = []
+        algorithm_texts = []
+        algorithm_results_labels = []
+        algorithm_count = 1  # Empezar con 1 algoritmo
+
+        # Título principal
+        title_frame = ctk.CTkFrame(comparison_window)
+        title_frame.pack(fill="x", padx=20, pady=(20, 10))
+
+        title_label = ctk.CTkLabel(
+            title_frame,
+            text="⚖️ Comparador de Algoritmos",
+            font=ctk.CTkFont(size=24, weight="bold")
+        )
+        title_label.pack(pady=15)
+
+        # Frame para controles de algoritmos (+/-)
+        control_frame = ctk.CTkFrame(comparison_window)
+        control_frame.pack(fill="x", padx=20, pady=(0, 10))
+
+        # Label para mostrar cantidad actual
+        count_label = ctk.CTkLabel(
+            control_frame,
+            text="Algoritmos a comparar: 1",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        count_label.pack(side="left", padx=(20, 20), pady=15)
+
+        # Botón para agregar algoritmo
+        add_btn = ctk.CTkButton(
+            control_frame,
+            text="➕ Agregar",
+            command=lambda: add_algorithm(),
+            width=120,
+            height=35,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="green",
+            hover_color="darkgreen"
+        )
+        add_btn.pack(side="left", padx=5, pady=15)
+
+        # Botón para quitar algoritmo
+        remove_btn = ctk.CTkButton(
+            control_frame,
+            text="➖ Quitar",
+            command=lambda: remove_algorithm(),
+            width=120,
+            height=35,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="red",
+            hover_color="darkred",
+            state="disabled"  # Inicia deshabilitado porque solo hay 1
+        )
+        remove_btn.pack(side="left", padx=5, pady=15)
+
+        # Botón principal: Analizar y Comparar (movido aquí)
+        analyze_and_compare_btn = ctk.CTkButton(
+            control_frame,
+            text="🔍📊 Analizar y Comparar",
+            command=lambda: analyze_all_and_compare(),
+            width=220,
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="blue",
+            hover_color="darkblue"
+        )
+        analyze_and_compare_btn.pack(side="left", padx=(20, 10), pady=15)
+
+        # Frame principal con scrollbar
+        main_container = ctk.CTkFrame(comparison_window)
+        main_container.pack(fill="both", expand=True, padx=20, pady=(0, 10))
+
+        # Crear scrollable frame
+        scrollable_frame = ctk.CTkScrollableFrame(main_container, height=400)
+        scrollable_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Función para crear un frame de algoritmo
+        def create_algorithm_frame(index):
+            # Frame contenedor del algoritmo
+            algo_frame = ctk.CTkFrame(scrollable_frame)
+            algo_frame.pack(fill="x", padx=10, pady=10)
+
+            # Header del algoritmo
+            header_frame = ctk.CTkFrame(algo_frame)
+            header_frame.pack(fill="x", padx=15, pady=(15, 10))
+
+            # Nombre del algoritmo (automático)
+            name_label = ctk.CTkLabel(
+                header_frame,
+                text=f"🔢 Algoritmo {index + 1}",
+                font=ctk.CTkFont(size=16, weight="bold")
+            )
+            name_label.pack(side="left", padx=15, pady=10)
+
+            # Área de texto para el código
+            code_frame = ctk.CTkFrame(algo_frame)
+            code_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
+
+            code_text = ctk.CTkTextbox(
+                code_frame,
+                height=120,
+                font=ctk.CTkFont(family="Consolas", size=10),
+                wrap="none"
+            )
+            code_text.pack(fill="both", expand=True, padx=10, pady=10)
+
+            # Label para mostrar el resultado
+            result_label = ctk.CTkLabel(
+                algo_frame,
+                text="⏳ No analizado",
+                font=ctk.CTkFont(size=11),
+                text_color="orange"
+            )
+            result_label.pack(padx=15, pady=(0, 15))
+
+            return algo_frame, code_text, result_label
+
+        # Función para agregar algoritmo
+        def add_algorithm():
+            nonlocal algorithm_count
+            if algorithm_count < 5:  # Máximo 5 algoritmos
+                frame, text, label = create_algorithm_frame(algorithm_count)
+                algorithm_frames.append(frame)
+                algorithm_texts.append(text)
+                algorithm_results_labels.append(label)
+                algorithm_count += 1
+
+                count_label.configure(text=f"Algoritmos a comparar: {algorithm_count}")
+
+                # Habilitar botón quitar si hay más de 1
+                if algorithm_count > 1:
+                    remove_btn.configure(state="normal")
+
+                # Deshabilitar botón agregar si llegamos al máximo
+                if algorithm_count >= 5:
+                    add_btn.configure(state="disabled")
+
+        # Función para quitar algoritmo
+        def remove_algorithm():
+            nonlocal algorithm_count
+            if algorithm_count > 1:  # Mínimo 1 algoritmo
+                # Remover el último algoritmo
+                last_frame = algorithm_frames.pop()
+                last_frame.destroy()
+                algorithm_texts.pop()
+                algorithm_results_labels.pop()
+                algorithm_count -= 1
+
+                count_label.configure(text=f"Algoritmos a comparar: {algorithm_count}")
+
+                # Limpiar datos del algoritmo removido
+                if algorithm_count in algorithms_data:
+                    del algorithms_data[algorithm_count]
+
+                # Deshabilitar botón quitar si solo queda 1
+                if algorithm_count <= 1:
+                    remove_btn.configure(state="disabled")
+
+                # Habilitar botón agregar
+                add_btn.configure(state="normal")
+
+        # Crear el primer algoritmo
+        frame, text, label = create_algorithm_frame(0)
+        algorithm_frames.append(frame)
+        algorithm_texts.append(text)
+        algorithm_results_labels.append(label)
+
+        # Frame para botones de acción
+        action_frame = ctk.CTkFrame(comparison_window)
+        action_frame.pack(fill="x", padx=20, pady=(0, 20))
+
+        # Botón para cargar ejemplos
+        load_examples_btn = ctk.CTkButton(
+            action_frame,
+            text="📋 Cargar Ejemplos",
+            command=lambda: load_example_algorithms(),
+            width=150,
+            height=35,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="purple",
+            hover_color="darkmagenta"
+        )
+        load_examples_btn.pack(side="left", padx=(20, 10), pady=15)
+
+        # Botón para limpiar todo
+        clear_all_btn = ctk.CTkButton(
+            action_frame,
+            text="🗑️ Limpiar",
+            command=lambda: clear_all_algorithms(),
+            width=120,
+            height=35,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="gray",
+            hover_color="darkgray"
+        )
+        clear_all_btn.pack(side="left", padx=10, pady=15)
+
+        # Botón cerrar
+        close_btn = ctk.CTkButton(
+            action_frame,
+            text="❌ Cerrar",
+            command=comparison_window.destroy,
+            width=100,
+            height=35,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="red",
+            hover_color="darkred"
+        )
+        close_btn.pack(side="right", padx=(10, 20), pady=15)
+
+        def analyze_all_and_compare():
+            """Analiza todos los algoritmos y genera la comparación"""
+            algorithms_data.clear()
+
+            # Analizar cada algoritmo
+            valid_count = 0
+            for i in range(algorithm_count):
+                code = algorithm_texts[i].get("1.0", "end-1c").strip()
+
+                # Verificar si no es el placeholder text
+                placeholder = f"// Ingrese el código del Algoritmo {i + 1} aquí..."
+                if code and code != placeholder:
+                    try:
+                        algorithm_results_labels[i].configure(text="🔄 Analizando...", text_color="yellow")
+                        comparison_window.update()
+
+                        result = self.analyzer.analyze_nested_loops(code)
+
+                        algorithms_data[i] = {
+                            'name': f"Algoritmo {i + 1}",
+                            'code': code,
+                            'result': result
+                        }
+
+                        algorithm_results_labels[i].configure(
+                            text=f"✅ {result['complexity']}",
+                            text_color="lightgreen"
+                        )
+                        valid_count += 1
+
+                    except Exception as e:
+                        algorithm_results_labels[i].configure(
+                            text=f"❌ Error: {str(e)[:25]}...",
+                            text_color="red"
+                        )
+                else:
+                    algorithm_results_labels[i].configure(text="⚠️ Código vacío", text_color="orange")
+
+            # Verificar que haya al menos 1 algoritmo válido para graficar
+            if valid_count == 0:
+                messagebox.showwarning("⚠️ Advertencia", "No hay algoritmos válidos para analizar")
+                return
+
+            # Generar la gráfica automáticamente
+            generate_comparison_graph(algorithms_data)
+
+        def load_example_algorithms():
+            """Carga algoritmos de ejemplo"""
+            examples = [
+                '''for(int i = 0; i < n; i++) {
+    if(array[i] == target) {
+        return i;
+    }
+}''',
+                '''while(left <= right) {
+    int mid = (left + right) / 2;
+    if(array[mid] == target) {
+        return mid;
+    }
+    if(array[mid] < target) {
+        left = mid + 1;
+    } else {
+        right = mid - 1;
+    }
+}''',
+                '''for(int i = 0; i < n; i++) {
+    for(int j = 0; j < n-1; j++) {
+        if(array[j] > array[j+1]) {
+            int temp = array[j];
+            array[j] = array[j+1];
+            array[j+1] = temp;
+        }
+    }
+}''',
+                '''for(int i = 0; i < n; i++) {
+    for(int j = 0; j < n; j++) {
+        for(int k = 0; k < n; k++) {
+            if(array[i] + array[j] + array[k] == target) {
+                return true;
+            }
+        }
+    }
+}''',
+                '''for(int size = 1; size < n; size = size * 2) {
+    for(int left = 0; left < n; left = left + size * 2) {
+        int mid = left + size - 1;
+        int right = left + size * 2 - 1;
+        merge(array, left, mid, right);
+    }
+}'''
+            ]
+
+            # Ajustar la cantidad de algoritmos para los ejemplos
+            target_count = min(5, len(examples))
+
+            # Agregar algoritmos si es necesario
+            while algorithm_count < target_count:
+                add_algorithm()
+
+            # Quitar algoritmos si es necesario
+            while algorithm_count > target_count:
+                remove_algorithm()
+
+            # Cargar los ejemplos
+            for i in range(min(algorithm_count, len(examples))):
+                algorithm_texts[i].delete("1.0", "end")
+                algorithm_texts[i].insert("1.0", examples[i])
+
+        def clear_all_algorithms():
+            """Limpia todos los algoritmos"""
+            algorithms_data.clear()
+            for i in range(algorithm_count):
+                algorithm_texts[i].delete("1.0", "end")
+                algorithm_results_labels[i].configure(text="⏳ No analizado", text_color="orange")
+
+        def generate_comparison_graph(algos_data):
+            """Genera la gráfica de comparación"""
+            valid_algorithms = {k: v for k, v in algos_data.items() if v is not None}
+
+            if len(valid_algorithms) == 0:
+                messagebox.showwarning("⚠️ Advertencia", "No hay algoritmos válidos para comparar")
+                return
+
+            # Crear ventana de gráfica
+            graph_window = ctk.CTkToplevel(comparison_window)
+            graph_window.title("📊 Comparación de Algoritmos")
+            graph_window.geometry("1400x800")
+            graph_window.resizable(True, True)
+            graph_window.grab_set()
+
+            # Configurar estilo
+            plt.style.use('dark_background')
+
+            # Crear figura con una sola gráfica grande
+            fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+            fig.patch.set_facecolor('black')
+
+            # Colores para cada algoritmo
+            colors = ['cyan', 'yellow', 'lime', 'magenta', 'orange']
+            line_styles = ['-', '--', '-.', ':', '-']
+
+            n_values = np.logspace(1, 4, 100)  # De 10 a 10,000
+
+            # Plotear todas las líneas de complejidad
+            for i, (index, algo_data) in enumerate(valid_algorithms.items()):
+                complexity = algo_data['result']['complexity']
+                name = algo_data['name']
+                color = colors[i % len(colors)]
+                style = line_styles[i % len(line_styles)]
+
+                y_values = self.get_complexity_values(n_values, complexity)
+                ax.plot(n_values, y_values, color=color, linewidth=3,
+                        linestyle=style, label=f'{name}: {complexity}', alpha=0.9)
+
+            ax.set_xlabel('Tamaño de entrada (n)', fontsize=16, color='white', fontweight='bold')
+            ax.set_ylabel('Tiempo de ejecución T(n)', fontsize=16, color='white', fontweight='bold')
+            ax.set_title('Comparación de Complejidades Temporales', fontsize=18, fontweight='bold', color='cyan')
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            ax.grid(True, alpha=0.3, color='gray')
+            ax.legend(fontsize=12, loc='upper left', framealpha=0.8)
+
+            # Mejorar el aspecto visual
+            ax.tick_params(axis='both', which='major', labelsize=12, colors='white')
+            ax.spines['bottom'].set_color('white')
+            ax.spines['top'].set_color('white')
+            ax.spines['right'].set_color('white')
+            ax.spines['left'].set_color('white')
+
+            plt.tight_layout()
+
+            # Crear interfaz de la ventana
+            title_frame = ctk.CTkFrame(graph_window)
+            title_frame.pack(fill="x", padx=20, pady=(20, 10))
+
+            title_label = ctk.CTkLabel(
+                title_frame,
+                text=f"📊 Comparación de {len(valid_algorithms)} Algoritmo{'s' if len(valid_algorithms) > 1 else ''}",
+                font=ctk.CTkFont(size=20, weight="bold")
+            )
+            title_label.pack(pady=15)
+
+            # Canvas para la gráfica
+            canvas = FigureCanvasTkAgg(fig, master=graph_window)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=(0, 10))
+
+            # Frame para información resumida
+            info_frame = ctk.CTkFrame(graph_window)
+            info_frame.pack(fill="x", padx=20, pady=(0, 10))
+
+            info_text = "Resumen: "
+            for i, (index, algo_data) in enumerate(valid_algorithms.items()):
+                if i > 0:
+                    info_text += " | "
+                info_text += f"{algo_data['name']}: {algo_data['result']['complexity']}"
+
+            info_label = ctk.CTkLabel(
+                info_frame,
+                text=info_text,
+                font=ctk.CTkFont(size=12),
+                text_color="lightblue",
+                wraplength=1200
+            )
+            info_label.pack(pady=10)
+
+            # Botones
+            button_frame = ctk.CTkFrame(graph_window)
+            button_frame.pack(fill="x", padx=20, pady=(0, 20))
+
+            save_comparison_btn = ctk.CTkButton(
+                button_frame,
+                text="💾 Guardar Comparación",
+                command=lambda: self.save_comparison_graph(fig),
+                width=180,
+                height=35,
+                font=ctk.CTkFont(size=12, weight="bold"),
+                fg_color="green",
+                hover_color="darkgreen"
+            )
+            save_comparison_btn.pack(side="left", padx=(20, 10), pady=15)
+
+            close_graph_btn = ctk.CTkButton(
+                button_frame,
+                text="❌ Cerrar",
+                command=graph_window.destroy,
+                width=120,
+                height=35,
+                font=ctk.CTkFont(size=12, weight="bold"),
+                fg_color="red",
+                hover_color="darkred"
+            )
+            close_graph_btn.pack(side="right", padx=(10, 20), pady=15)
+
+            # Centrar ventana de gráfica un poco más abajo
+            graph_window.update_idletasks()
+            x = (graph_window.winfo_screenwidth() // 2) - (1400 // 2)
+            y = (graph_window.winfo_screenheight() // 2) - (400 // 2) + 50  # +50 para bajarla
+            graph_window.geometry(f"1400x800+{x}+{y}")
+
+        # Centrar ventana de comparación un poco más abajo
+        comparison_window.update_idletasks()
+        x = (comparison_window.winfo_screenwidth() // 2) - (1400 // 2)
+        y = (comparison_window.winfo_screenheight() // 2) - (400 // 2) + 30  # +30 para bajarla
+        comparison_window.geometry(f"1400x800+{x}+{y}")
+
+    def get_complexity_values(self, n_values, complexity):
+        """Obtiene los valores Y para graficar según la complejidad"""
+        if "N^3" in complexity:
+            return n_values ** 3
+        elif "N^2" in complexity:
+            return n_values ** 2
+        elif "N × log^2 N" in complexity or "N log^2 N" in complexity:
+            return n_values * (np.log2(n_values)) ** 2
+        elif "N × log N" in complexity or "N log N" in complexity:
+            return n_values * np.log2(n_values)
+        elif "log^2 N" in complexity:
+            return (np.log2(n_values)) ** 2
+        elif "log N" in complexity:
+            return np.log2(n_values)
+        elif "N" in complexity:
+            return n_values
+        else:
+            return np.ones_like(n_values)  # O(1)
+
+    def save_comparison_graph(self, fig):
+        """Guarda la gráfica de comparación"""
+        file_path = filedialog.asksaveasfilename(
+            title="Guardar comparación de algoritmos",
+            defaultextension=".png",
+            filetypes=[
+                ("Archivos PNG", "*.png"),
+                ("Archivos JPG", "*.jpg"),
+                ("Archivos SVG", "*.svg"),
+                ("Archivos PDF", "*.pdf")
+            ],
+            initialfile=f"comparacion_algoritmos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        )
+
+        if file_path:
+            try:
+                fig.savefig(file_path, dpi=300, bbox_inches='tight', facecolor='black', edgecolor='none')
+                messagebox.showinfo("✅ Éxito", f"Comparación guardada exitosamente:\n{os.path.basename(file_path)}")
+            except Exception as e:
+                messagebox.showerror("❌ Error", f"Error al guardar comparación:\n{str(e)}")
+
     def generate_full_report(self):
         """Genera el reporte completo para mostrar en la interfaz"""
         report = []
 
         # Encabezado
-        report.append("=" * 80)
+        report.append("=" * 60)
         report.append("🔬 REPORTE COMPLETO DE ANÁLISIS DE COMPLEJIDAD TEMPORAL")
-        report.append("=" * 80)
+        report.append("=" * 60)
         report.append("")
 
         # Información general
@@ -297,16 +819,9 @@ class ComplexityAnalyzerGUI:
         report.append("")
 
         # Función de tiempo
-        report.append("⚙️ FUNCIÓN DE TIEMPO")
+        report.append("⚙️ FUNCIÓN DE TIEMPO FINAL")
         report.append("-" * 50)
         report.append(f"T(n) = {self.current_result['function']}")
-        report.append("")
-
-        # Pasos del análisis
-        report.append("📊 PASOS DEL ANÁLISIS")
-        report.append("-" * 50)
-        for i, step in enumerate(self.current_result['steps'], 1):
-            report.append(f"{i}. {step}")
         report.append("")
 
         # Análisis detallado
@@ -324,9 +839,9 @@ class ComplexityAnalyzerGUI:
                 report.append(f"{i:3d}: {line}")
 
         report.append("")
-        report.append("=" * 80)
+        report.append("=" * 60)
         report.append("📌 Fin del reporte")
-        report.append("=" * 80)
+        report.append("=" * 60)
 
         return "\n".join(report)
 
@@ -361,87 +876,107 @@ class ComplexityAnalyzerGUI:
                 messagebox.showerror("❌ Error", f"Error al generar PDF:\n{str(e)}")
 
     def create_pdf_report(self, file_path):
-        """Crea el reporte PDF detallado"""
+        """Crea el reporte PDF detallado con formato personalizado"""
         doc = SimpleDocTemplate(file_path, pagesize=letter)
         styles = getSampleStyleSheet()
         story = []
 
-        # Estilo personalizado para título
+        # Estilo personalizado para título (Times New Roman 12pt, azul)
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
-            fontSize=20,
+            fontName='Times-Bold',
+            fontSize=12,
             spaceAfter=30,
             alignment=1,  # Centrado
-            textColor='darkblue'
+            textColor='blue'
         )
 
-        # Estilo para subtítulos
+        # Estilo para subtítulos (Times New Roman 12pt, verde, negrita)
         subtitle_style = ParagraphStyle(
             'CustomSubtitle',
             parent=styles['Heading2'],
-            fontSize=14,
+            fontName='Times-Bold',
+            fontSize=12,
             spaceBefore=20,
             spaceAfter=10,
-            textColor='darkgreen'
+            textColor='green'
+        )
+
+        # Estilo para texto normal (Times New Roman 12pt)
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontName='Times-Roman',
+            fontSize=12
+        )
+
+        # Estilo para código (Courier)
+        code_style = ParagraphStyle(
+            'CustomCode',
+            parent=styles['Code'],
+            fontName='Courier',
+            fontSize=10
         )
 
         # Título principal
-        story.append(Paragraph("🔬 Reporte de Análisis de Complejidad Temporal", title_style))
+        story.append(Paragraph("Reporte de Análisis de Complejidad Temporal", title_style))
         story.append(Spacer(1, 20))
 
         # Información general
-        story.append(Paragraph("📋 Información General", subtitle_style))
+        story.append(Paragraph("Información General", subtitle_style))
         story.append(
-            Paragraph(f"<b>Fecha de análisis:</b> {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", styles['Normal']))
-        story.append(Paragraph(f"<b>Complejidad detectada:</b> {self.current_result['complexity']}", styles['Normal']))
+            Paragraph(f"<b>Fecha de análisis:</b> {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", normal_style))
+        story.append(Paragraph(f"<b>Complejidad detectada:</b> {self.current_result['complexity']}", normal_style))
         story.append(
-            Paragraph(f"<b>Número de bucles anidados:</b> {self.current_result['loops_count']}", styles['Normal']))
+            Paragraph(f"<b>Número de bucles anidados:</b> {self.current_result['loops_count']}", normal_style))
+        story.append(Spacer(1, 20))
+
+        # ALGORITMO ANALIZADO
+        story.append(Paragraph("ALGORITMO ANALIZADO", subtitle_style))
+        story.append(Paragraph("─" * 30, normal_style))
+
+        # Agregar código línea por línea con numeración
+        code_lines = self.current_code.split('\n')
+        for i, line in enumerate(code_lines, 1):
+            if line.strip():  # Solo líneas no vacías
+                story.append(Paragraph(f"<font name='Courier' size='10'>{i:2d}: {line}</font>", normal_style))
+        story.append(Paragraph("─" * 30, normal_style))
         story.append(Spacer(1, 20))
 
         # Función de tiempo
-        story.append(Paragraph("⚙️ Función de Tiempo", subtitle_style))
+        story.append(Paragraph("Función de Tiempo", subtitle_style))
         story.append(
-            Paragraph(f"<font name='Courier' size='10'>{self.current_result['function']}</font>", styles['Normal']))
+            Paragraph(f"<font name='Courier' size='10'>{self.current_result['function']}</font>", normal_style))
         story.append(Spacer(1, 20))
 
         # Pasos del análisis
-        story.append(Paragraph("📊 Pasos del Análisis", subtitle_style))
+        story.append(Paragraph("Pasos del Análisis", subtitle_style))
         for i, step in enumerate(self.current_result['steps'], 1):
-            story.append(Paragraph(f"<b>{i}.</b> {step}", styles['Normal']))
+            story.append(Paragraph(f"<b>{i}.</b> {step}", normal_style))
         story.append(Spacer(1, 20))
 
         # Análisis detallado
-        story.append(Paragraph("📄 Análisis Detallado", subtitle_style))
+        story.append(Paragraph("Análisis Detallado", subtitle_style))
         analysis_lines = self.current_result['analysis'].split('\n')
         for line in analysis_lines:
             if line.strip():
                 if line.startswith('===') or line.startswith('---'):
-                    story.append(Paragraph(f"<b>{line}</b>", styles['Normal']))
+                    story.append(Paragraph(f"<b>{line}</b>", normal_style))
                 else:
-                    story.append(Paragraph(f"<font name='Courier' size='9'>{line}</font>", styles['Normal']))
-
-        # Nueva página para el código
-        story.append(PageBreak())
-        story.append(Paragraph("💻 Código Analizado", subtitle_style))
-
-        # Agregar código línea por línea
-        code_lines = self.current_code.split('\n')
-        for i, line in enumerate(code_lines, 1):
-            if line.strip():  # Solo líneas no vacías
-                story.append(Paragraph(f"<font name='Courier' size='8'>{i:3d}: {line}</font>", styles['Code']))
+                    story.append(Paragraph(f"<font name='Courier' size='9'>{line}</font>", normal_style))
 
         # Pie de página con información adicional
         story.append(Spacer(1, 30))
-        story.append(Paragraph("📌 Notas", subtitle_style))
+        story.append(Paragraph("Notas", subtitle_style))
         story.append(Paragraph("• Este reporte fue generado automáticamente por el Analizador de Complejidad Temporal",
-                               styles['Normal']))
+                               normal_style))
         story.append(Paragraph("• La complejidad calculada es asintótica (comportamiento para valores grandes de n)",
-                               styles['Normal']))
+                               normal_style))
         story.append(Paragraph("• Los resultados pueden variar según la implementación específica del hardware",
-                               styles['Normal']))
+                               normal_style))
         story.append(
-            Paragraph("• El cálculo se realiza de ADENTRO hacia AFUERA (bucle más interno primero)", styles['Normal']))
+            Paragraph("• El cálculo se realiza de ADENTRO hacia AFUERA (bucle más interno primero)", normal_style))
 
         doc.build(story)
 
@@ -677,19 +1212,6 @@ class ComplexityAnalyzerGUI:
             self.root.iconbitmap("icon.ico")  # Si tienes un icono
         except:
             pass
-
-        # Mensaje de bienvenida
-        messagebox.showinfo("🎉 Bienvenido",
-                            "¡Bienvenido al Analizador de Complejidad Temporal!\n\n" +
-                            "Características:\n" +
-                            "• Análisis automático de bucles FOR anidados\n" +
-                            "• Soporte para declaraciones IF y RETURN\n" +
-                            "• Cálculo correcto de ADENTRO hacia AFUERA\n" +
-                            "• Reporte completo visible en interfaz\n" +
-                            "• Generación de reportes PDF\n" +
-                            "• Gráficas de complejidad comparativas\n" +
-                            "• Interfaz intuitiva y moderna\n\n" +
-                            "¡Comienza analizando el código de ejemplo!")
 
         self.root.mainloop()
 
