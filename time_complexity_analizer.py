@@ -246,10 +246,10 @@ class TimeComplexityAnalyzer:
             return f"({start} - {end} + 1)"
         elif step.startswith('+'):
             increment = step[1:]
-            return f"ceil(({end} - {start})/{increment})"
+            return f"(({end} - {start})/{increment})"
         elif step.startswith('-'):
             decrement = step[1:]
-            return f"ceil(({start} - {end})/{decrement})"
+            return f"(({start} - {end})/{decrement})"
         elif step.startswith('*'):
             multiplier = step[1:]
             return f"(log_{multiplier}({end}/{start}) + c)"
