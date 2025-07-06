@@ -173,21 +173,54 @@ class TimeComplexityAnalyzer:
         """Extrae información del paso del bucle FOR"""
         step_expr = step_expr.replace(' ', '')
 
+        # Casos simples: i++, ++i, i--, --i
         if f'{var}++' in step_expr or f'++{var}' in step_expr:
             return '+1'
         elif f'{var}--' in step_expr or f'--{var}' in step_expr:
             return '-1'
-        elif f'{var}*' in step_expr:
-            pattern = rf'{var}\*(\d+)'
-            match = re.search(pattern, step_expr)
-            if match:
-                return f'*{match.group(1)}'
-        elif f'{var}/' in step_expr:
-            pattern = rf'{var}/(\d+)'
-            match = re.search(pattern, step_expr)
-            if match:
-                return f'/{match.group(1)}'
 
+        # Casos con +=, -=
+        elif f'{var}+=' in step_expr:
+            pattern = rf'{var}\+=(\d+)'
+            match = re.search(pattern, step_expr)
+            if match:
+                return f'+{match.group(1)}'
+            return '+1'
+
+        elif f'{var}-=' in step_expr:
+            pattern = rf'{var}\-=(\d+)'
+            match = re.search(pattern, step_expr)
+            if match:
+                return f'-{match.group(1)}'
+            return '-1'
+
+        # Casos con = (i = i + 2, i = i * 3, etc.)
+        elif f'{var}=' in step_expr:
+            # Patrón para i = i + número
+            pattern_add = rf'{var}={var}\+(\d+)'
+            match_add = re.search(pattern_add, step_expr)
+            if match_add:
+                return f'+{match_add.group(1)}'
+
+            # Patrón para i = i - número
+            pattern_sub = rf'{var}={var}\-(\d+)'
+            match_sub = re.search(pattern_sub, step_expr)
+            if match_sub:
+                return f'-{match_sub.group(1)}'
+
+            # Patrón para i = i * número
+            pattern_mult = rf'{var}={var}\*(\d+)'
+            match_mult = re.search(pattern_mult, step_expr)
+            if match_mult:
+                return f'*{match_mult.group(1)}'
+
+            # Patrón para i = i / número
+            pattern_div = rf'{var}={var}/(\d+)'
+            match_div = re.search(pattern_div, step_expr)
+            if match_div:
+                return f'/{match_div.group(1)}'
+
+        # Si no coincide con ningún patrón conocido
         return step_expr
 
     def _determine_complexity_type(self, step: str) -> str:
@@ -196,6 +229,8 @@ class TimeComplexityAnalyzer:
             return "linear"
         elif step.startswith('*') or step.startswith('/'):
             return "logarithmic"
+        elif step in ['++', '--']:
+            return "linear"
         else:
             return "constant"
 
@@ -209,15 +244,18 @@ class TimeComplexityAnalyzer:
             return f"({end} - {start} + 1)"
         elif step == '-1':
             return f"({start} - {end} + 1)"
+        elif step.startswith('+'):
+            increment = step[1:]
+            return f"ceil(({end} - {start})/{increment})"
+        elif step.startswith('-'):
+            decrement = step[1:]
+            return f"ceil(({start} - {end})/{decrement})"
         elif step.startswith('*'):
             multiplier = step[1:]
             return f"(log_{multiplier}({end}/{start}) + c)"
         elif step.startswith('/'):
             divisor = step[1:]
             return f"(log_{divisor}({start}/{end}) + c)"
-        elif step.startswith('+'):
-            increment = step[1:]
-            return f"({end} - {start})/{increment}"
         else:
             return f"f({start}, {end}, {step})"
 
